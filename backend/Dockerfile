@@ -1,11 +1,13 @@
-FROM golang:1.23-alpine AS build
+FROM golang:1.26-alpine AS build
 WORKDIR /app
-COPY go.mod ./
+COPY go.mod go.sum ./
+RUN go mod download
 COPY cmd ./cmd
-RUN CGO_ENABLED=0 go build -o /billflow-api ./cmd/api
+COPY internal ./internal
+RUN CGO_ENABLED=0 go build -trimpath -o /billflow-api ./cmd/api
 
-FROM alpine:3.21
-RUN adduser -D -H appuser
+FROM alpine:3.23
+RUN apk add --no-cache ca-certificates && adduser -D -H appuser
 USER appuser
 COPY --from=build /billflow-api /billflow-api
 EXPOSE 8080
